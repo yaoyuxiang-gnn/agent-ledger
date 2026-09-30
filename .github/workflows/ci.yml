@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (py${{ matrix.python }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        exclude:
+          # Keep the matrix honest without spending minutes on redundant runs.
+          - os: windows-latest
+            python: "3.11"
+          - os: macos-latest
+            python: "3.11"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Test
+        run: python -m pytest -q
+
+      - name: Demo must run on a clean checkout
+        # The offline demo is the project's front door. If it breaks, the
+        # README breaks, so it is a CI gate rather than a smoke test.
+        run: python -m agent_ledger.cli demo --no-color
+        env:
+          NO_COLOR: "1"
+
+      - name: READMEs must still describe this software
+        # Documentation drifts in one direction: it describes the version someone
+        # was proud of. This checks the claims that can be checked — every
+        # documented command and flag exists, the quoted test count is real, the
+        # demo transcript still matches, and the Chinese README has not fallen
+        # behind the English one.
+        run: python tools/check_readme.py
+        env:
+          NO_COLOR: "1"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip ruff
+      - run: ruff check src tests
+      - run: ruff format --check src tests
+
+  zero-dependency:
+    name: no runtime dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Assert the package declares no runtime dependencies
+        # Zero dependencies is a headline promise in the README. This job is
+        # what keeps it true.
+        run: |
+          python - <<'PY'
+          import pathlib, re, sys
+
+          text = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+          match = re.search(r"^dependencies\s*=\s*\[(.*?)\]", text, re.S | re.M)
+          if match is None:
+              sys.exit("could not find a dependencies key in pyproject.toml")
+          body = match.group(1).strip()
+          if body:
+              sys.exit(f"runtime dependencies must stay empty, found: {body!r}")
+          print("ok: no runtime dependencies declared")
+          PY
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build
+      - name: Assert the sdists and wheels contain only what they should
+        # A missing .gitignore pattern once produced a 16 MB sdist containing a
+        # whole virtualenv. `.venv/` does not match `.venv-test/`, so this is a
+        # mistake that is easy to make and invisible without checking the
+        # artefact. Fail loudly instead.
+        run: |
+          python - <<'PY'
+          import glob, sys, tarfile, zipfile
+
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          names = [n for n in tarfile.open(sdist).getnames() if not n.endswith("/")]
+          print(f"{sdist}: {len(names)} files")
+
+          forbidden = (".venv", "venv/", "node_modules", "__pycache__", ".pyc", ".git/")
+          bad = [n for n in names if any(f in n for f in forbidden)]
+          if bad:
+              sys.exit(f"artefact leak in {sdist}:\n  " + "\n  ".join(bad[:20]))
+
+          required = (
+              "pyproject.toml",
+              "README.md",
+              "README.zh-CN.md",
+              "LICENSE",
+              "CHANGELOG.md",
+          )
+          missing = [r for r in required if not any(n.endswith(r) for n in names)]
+          if missing:
+              sys.exit(f"{sdist} is missing: {missing}")
+
+          wheel = glob.glob("dist/*.whl")[0]
+          wnames = zipfile.ZipFile(wheel).namelist()
+          if not any(n.endswith("agent_ledger/py.typed") for n in wnames):
+              sys.exit("wheel is missing py.typed, so `Typing :: Typed` would be a lie")
+          if [n for n in wnames if "__pycache__" in n or n.endswith(".pyc")]:
+              sys.exit("wheel contains bytecode caches")
+
+          print(f"{wheel}: {len(wnames)} entries, py.typed present, no bytecode")
+          PY
+      - name: Install the built wheel in isolation
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/python -m pip install dist/*.whl
+          /tmp/clean/bin/al demo --no-color > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

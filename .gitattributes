@@ -1,0 +1,21 @@
+# Normalise line endings in the repository, not on each contributor's machine.
+#
+# Without this, Git's autocrlf converts LF to CRLF on checkout for every text
+# file, which makes `git diff` noisy across platforms, and — more importantly
+# here — would change the bytes of any committed JSONL ledger fixture and
+# therefore every digest computed over it. Digests are supposed to be
+# reproducible on any machine; line-ending normalisation is part of what makes
+# that true.
+* text=auto eol=lf
+
+# Binary artefacts must never be touched.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.whl binary
+*.gz binary
+*.zip binary
+
+# Ledger fixtures are evidence. Hash them byte-for-byte, never normalise them.
+*.jsonl -text

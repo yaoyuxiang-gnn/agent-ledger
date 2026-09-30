@@ -1,0 +1,61 @@
+name: Feature request
+description: Propose a change in behaviour, an adapter, or an integration.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, `CONTRIBUTING.md` has a "What would help most" list, and
+        `docs/DESIGN.md` has the honest limitations. If your idea is already on
+        either, a comment there is more useful than a new issue.
+
+        Two constraints shape what can be merged, and proposals that respect them
+        move much faster:
+
+        - **Zero runtime dependencies.** The `dependencies` list must stay empty;
+          a CI job fails the build if it does not. Optional extras are fine —
+          `[sign]` is the expected shape for anything that needs a library.
+        - **Denials stay data.** A refusal is a `PolicyDecision`, not an exception.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation you are in, not the API you want. The API is usually easier to get right once the problem is clear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Discovery (ARD)
+        - Matching and reputation
+        - Policy
+        - Delegation and receipts
+        - Ledger and storage
+        - Execution / A2A executor
+        - CLI
+        - Docs
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: This can be done without adding a runtime dependency (or as an opt-in extra).
+          required: false
+        - label: I am willing to open a pull request for this.
+          required: false

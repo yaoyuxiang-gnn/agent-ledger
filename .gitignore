@@ -1,0 +1,147 @@
+# What may be published
+#
+# This file is deliberately explicit rather than exhaustive. A deny-list only
+# stops the leaks somebody already thought of; the next stray file — a release
+# plan, a strategy note, a scratch analysis — walks straight past it. So the
+# rules below name the *few* local-only directories instead, and everything else
+# here is the ordinary build and editor cruft.
+#
+# The rule this encodes: **anything that is not the product or its public
+# documentation does not get committed.** If you are unsure whether a file is
+# product, it is not.
+
+
+# --------------------------------------------------------------------------- #
+# Local-only working material. NEVER published.
+# --------------------------------------------------------------------------- #
+
+# Strategy, planning, launch notes, competitive analysis, anything written for
+# us rather than for a reader. Kept on disk because it is useful; kept out of
+# git because a repository is a publication, not a folder.
+.internal/
+.notes/
+.planning/
+private/
+
+# Security audits and threat models. These are the one category where publishing
+# is actively harmful: a document that lists weaknesses by file and line is a
+# map for anyone who wants to use them, and "the issues are fixed" is not a
+# reason to hand over the map.
+AUDIT-*.md
+THREAT-MODEL*.md
+SECURITY-AUDIT*.md
+
+# Release and launch plans. How a project intends to earn attention is not part
+# of what it does, and it reads badly to the people whose attention is wanted.
+RELEASE*.md
+LAUNCH*.md
+STRATEGY*.md
+ROADMAP-INTERNAL*.md
+
+# Scratch, drafts, and one-off analysis scripts
+_scratch*.*
+_dbg*.*
+_tmp*.*
+*.draft.md
+TODO.local.md
+
+
+# --------------------------------------------------------------------------- #
+# Python build and cache artefacts
+# --------------------------------------------------------------------------- #
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+sdist/
+
+
+# --------------------------------------------------------------------------- #
+# Virtual environments
+#
+# `.venv-*/` is listed as well as `.venv/` because `.venv/` does NOT match
+# `.venv-test/`. That distinction is not cosmetic: hatchling honours .gitignore
+# when assembling an sdist, so one missing pattern once produced a 16 MB sdist
+# containing an entire virtualenv, `python.exe` included. Every environment
+# directory name in use must be covered here.
+# --------------------------------------------------------------------------- #
+
+.venv/
+.venv-*/
+venv/
+venv-*/
+env/
+ENV/
+
+
+# --------------------------------------------------------------------------- #
+# Test, coverage and lint caches
+# --------------------------------------------------------------------------- #
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+
+# --------------------------------------------------------------------------- #
+# Ledgers and key material produced by running the thing
+#
+# Receipts are evidence and keys are keys; neither belongs in a source
+# repository. Fixtures are the exception, and are re-included explicitly.
+# --------------------------------------------------------------------------- #
+
+*.jsonl
+!tests/fixtures/*.jsonl
+
+# Trust stores and signed bundles. A keyring holds public keys, but publishing
+# one is an operational decision, not a side effect of running a command.
+keyring.json
+*keyring*.json
+*.bundle.json
+secrets.json
+
+# Never, under any circumstance
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*.p12
+*.pfx
+
+
+# --------------------------------------------------------------------------- #
+# Documentation build output
+# --------------------------------------------------------------------------- #
+
+docs/_build/
+site/
+
+
+# --------------------------------------------------------------------------- #
+# Editors and operating systems
+# --------------------------------------------------------------------------- #
+
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,69 @@
+name: Bug report
+description: Something behaved differently from what the documentation says.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Two things make a bug report far easier to act on:
+
+        1. The output of `al demo` — it exercises the real code paths end to end.
+        2. If the problem is about *routing* (the wrong agent chosen, or none chosen),
+           the candidate list from `grid.candidates(task)`. Every signal is kept
+           visible precisely so routing can be diagnosed without guesswork.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: A minimal script or command sequence. If it needs a registry, describe the response shape rather than a private URL.
+      placeholder: |
+        1. `al demo`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Full traceback or output
+      description: Paste it verbatim. Do not trim the middle — the frame that matters is often the one that looks irrelevant.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `al --version`.
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python and OS
+      placeholder: "3.12.1 on Windows 11 / 3.11.7 on Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: integrity
+    attributes:
+      label: If this is about receipts, verification or the ledger
+      description: |
+        Known and already documented — please check these before filing, so the
+        issue tracker stays useful. `docs/DESIGN.md` has the honest limitations
+        list, and `SECURITY.md` repeats it as a table of what is already known.
+      options:
+        - label: I read the Limitations section of docs/DESIGN.md and this is not one of them.
+          required: false
