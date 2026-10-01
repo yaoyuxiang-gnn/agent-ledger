@@ -66,6 +66,18 @@ flag they name exists, the quoted test count is real, the demo transcript's numb
 still appear in real output, and the Chinese translation has not fallen behind. It
 runs in CI.
 
+If you changed the demo, also regenerate the social preview card:
+
+```bash
+python tools/make_social_preview.py
+```
+
+`tools/make_social_preview.py` captures the real `al demo` output and renders
+`.github/social-preview.png` from it, then you upload that file under
+**Settings → General → Social preview** (GitHub has no API for that field). It is
+generated rather than drawn so the card cannot advertise output the software no
+longer prints — and it is not checked in CI, so regenerating it is on you.
+
 ### Keeping the two READMEs in step
 
 `README.md` and `README.zh-CN.md` are the same document in two languages, with the
