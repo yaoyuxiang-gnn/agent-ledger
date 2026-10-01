@@ -1,0 +1,105 @@
+name: Release
+
+# Publishing is triggered by a *published GitHub release*, not by a tag push.
+#
+# A tag is a ref, and a ref can be moved; a release is a deliberate act with a
+# human on the other end of it. The distinction matters here because a version
+# number on PyPI can be yanked but never reused — the one mistake in this
+# workflow that cannot be repaired — so the trigger is the event with the most
+# intent behind it.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to upload. Use testpypi to rehearse the whole path."
+        type: choice
+        options: [pypi, testpypi]
+        default: testpypi
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build and check the artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build twine
+
+      - name: The tag must name the version being published
+        # PyPI will reject a second upload of an existing version, and the version
+        # number is burned either way. Catching the mismatch here — before the
+        # build — is the difference between a red X and a release nobody can redo.
+        if: github.event_name == 'release'
+        run: |
+          python - <<'PY'
+          import os, pathlib, re, sys
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          text = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+          version = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M).group(1)
+          if tag.lstrip("v") != version:
+              sys.exit(f"tag {tag!r} does not match pyproject version {version!r}")
+          print(f"ok: tag {tag} == version {version}")
+          PY
+
+      - name: Build
+        run: python -m build
+
+      - name: Check the artefacts, and that the metadata renders
+        # The same audit CI runs, plus the twine check that only matters at
+        # upload time — README.md is the PyPI long description, and a malformed
+        # one is rejected after the build rather than during it.
+        run: |
+          python tools/audit_dist.py
+          python -m twine check --strict dist/*
+
+      - name: The wheel must run on its own
+        # Everything above inspects the artefact. This runs it — installed into a
+        # clean interpreter, with no `src` on the path and no source tree in
+        # sight, which is the only configuration a PyPI user will ever have.
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/python -m pip install dist/*.whl
+          /tmp/clean/bin/al demo --no-color > /dev/null
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: publish to ${{ github.event_name == 'release' && 'PyPI' || inputs.target }}
+    needs: build
+    runs-on: ubuntu-latest
+
+    # Must match the environment named in the PyPI Trusted Publisher. It is also
+    # what lets you require a reviewer before a release reaches the world, which
+    # is the only remaining human gate in this path.
+    environment:
+      name: ${{ github.event_name == 'release' && 'pypi' || 'testpypi' }}
+      url: ${{ github.event_name == 'release' && 'https://pypi.org/p/ai-agent-ledger-py' || 'https://test.pypi.org/p/ai-agent-ledger-py' }}
+
+    permissions:
+      # The OIDC token that replaces an API token. Without this the upload cannot
+      # authenticate, and there is deliberately no secret to fall back on.
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ github.event_name == 'release' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}

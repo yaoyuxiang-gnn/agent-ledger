@@ -3,8 +3,13 @@ requires = ["hatchling>=1.21"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agent-ledger"
-version = "0.2.0"
+#: The distribution name, not the import name. `agent-ledger` is taken on PyPI
+#: by an unrelated project, so the name that ships is `ai-agent-ledger-py`. The
+#: import name (`agent_ledger`) and the console scripts (`al`, `agent-ledger`)
+#: are unchanged: a rename here costs nobody a line of code, and `pip install`
+#: is the only string that had to change.
+name = "ai-agent-ledger-py"
+version = "0.2.1"
 description = "An append-only, signed ledger for AI agent delegations. ARD finds agents, A2A talks to them — this records who authorised the work, within what limits, and how it ended."
 readme = "README.md"
 requires-python = ">=3.10"

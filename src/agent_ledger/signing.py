@@ -51,7 +51,7 @@ wraps OpenSSL but exposes no signing API, and 3.13 removed ``crypt`` without
 adding anything in its place. So Ed25519 needs ``cryptography``, which would
 break the zero-dependency promise — hence an optional extra, imported lazily, so
 that the extra never becomes *de facto* mandatory. ``pip install
-agent-ledger`` still pulls in nothing.
+ai-agent-ledger-py`` still pulls in nothing.
 
 **What signing still does not do on its own.** A signature proves a *key* signed a
 receipt. It says nothing about who holds that key, and a receipt's own ``signer``
@@ -302,7 +302,7 @@ def _ed25519():
     except ImportError as exc:  # pragma: no cover - depends on the environment
         raise ImportError(
             "Ed25519 signing requires the optional dependency:\n"
-            "    pip install 'agent-ledger[sign]'\n"
+            "    pip install 'ai-agent-ledger-py[sign]'\n"
             "HmacSigner is available in the core package and needs no extra, but "
             "it is symmetric and therefore cannot be verified by a third party."
         ) from exc

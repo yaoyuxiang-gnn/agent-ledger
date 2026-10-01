@@ -14,7 +14,7 @@ from __future__ import annotations
 
 __all__ = ["REPO_URL", "USER_AGENT", "VERSION"]
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 #: Where the project lives. Named in the ``User-Agent`` and in every generated
 #: document, so a remote operator who sees unexpected traffic can find out what

@@ -620,7 +620,7 @@ def run_demo(*, out: Callable[[str], None] = print, colour: bool = True) -> Demo
         c("  Next: ", BOLD)
         + c("al demo --json", CYAN)
         + c("   ·   ", DIM)
-        + c("pip install agent-ledger", CYAN)
+        + c("pip install ai-agent-ledger-py", CYAN)
     )
 
     return DemoResult(

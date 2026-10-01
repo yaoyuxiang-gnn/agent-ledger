@@ -4,7 +4,7 @@
 There is no shared record of what agents did, on whose authority. That is a ledger problem, so this is a ledger.</p>
 
 <p align="center">
-<code>pip install agent-ledger</code> &nbsp;·&nbsp; zero dependencies &nbsp;·&nbsp; no API key needed &nbsp;·&nbsp; Python 3.10+<br>
+<code>pip install ai-agent-ledger-py</code> &nbsp;·&nbsp; zero dependencies &nbsp;·&nbsp; no API key needed &nbsp;·&nbsp; Python 3.10+<br>
 <sub><a href="README.zh-CN.md">中文说明</a></sub>
 </p>
 
@@ -100,9 +100,21 @@ FAILED: 1 tampered (line 3 (rcpt_1790775390758_6314f873))
 
 ## Install
 
-**Not yet on PyPI.** `0.1.0` is tagged and the artifacts build cleanly, but nothing has been
-uploaded — so `pip install agent-ledger` reports *no matching distribution* today. Install
-from source:
+```bash
+pip install ai-agent-ledger-py    # zero runtime dependencies, Python 3.10+
+```
+
+The console scripts are `al` and `agent-ledger`, so `al demo` runs the whole thing offline.
+Without installing anything, `uvx --from ai-agent-ledger-py al demo` does the same.
+
+> **One naming wrinkle, stated up front.** The *distribution* is
+> `ai-agent-ledger-py`, because `agent-ledger` on PyPI belongs to an unrelated
+> project. Nothing else moved: the import is still `agent_ledger`, the commands are
+> still `al` and `agent-ledger`, and the repository is still
+> [agent-ledger](https://github.com/yaoyuxiang-gnn/agent-ledger). Only the string
+> you pass to `pip` differs.
+
+### From source
 
 ```bash
 git clone https://github.com/yaoyuxiang-gnn/agent-ledger
@@ -119,19 +131,12 @@ Administrator-owned and not writable — pip then fails with a confusing
 `[WinError 2] The system cannot find the file specified: ...al.exe.deleteme`, which is
 file-not-found rather than access-denied and reads like a build error. A venv avoids it entirely.
 
-Once published, the intended interface is:
-
-```bash
-pip install agent-ledger      # zero runtime dependencies
-uvx agent-ledger demo         # or run it without installing
-```
-
 **Optional extras.** The core has **no runtime dependencies at all**. Signing with Ed25519 — the
 only option a third party can verify without being able to forge — needs a library, so it is an
 extra rather than a dependency:
 
 ```bash
-pip install 'agent-ledger[sign]'   # cryptography, for Ed25519 receipts
+pip install 'ai-agent-ledger-py[sign]'   # cryptography, for Ed25519 receipts
 ```
 
 ## Using it
@@ -305,7 +310,7 @@ claim that overstates itself is worse than no claim:
 - **HMAC cannot be checked by a third party.** It is symmetric, so every verifier is also a forger:
   evidence *within* one trust domain, not *between* organisations. The core ships it because it
   needs no dependency. For third-party verifiability use Ed25519 (`pip install
-  'agent-ledger[sign]'`), where a public key verifies and cannot forge.
+  'ai-agent-ledger-py[sign]'`), where a public key verifies and cannot forge.
 - **Tail truncation is detectable only against a published head.** A shortened prefix is a perfectly
   consistent chain, so nothing inside the file can notice. `al verify` prints the head;
   `--expect-head` checks one you published earlier. The publication *is* the fix.

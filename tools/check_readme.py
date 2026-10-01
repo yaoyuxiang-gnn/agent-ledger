@@ -19,6 +19,7 @@ Run it after changing the CLI, the test count, or the demo:
 
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 import subprocess
@@ -83,6 +84,13 @@ def main() -> int:
                 problems.append(f"{name}: documents `al {match}`, which does not exist")
 
     # 2. Flags named in a README must exist somewhere in the command tree.
+    #
+    # `--from` is uv's, not ours: `uvx --from <distribution> al demo` is how the
+    # README tells a reader to run this without installing it, and the checker
+    # cannot tell another tool's flag from a fictional one of ours. Listed rather
+    # than regexed around, so that the exemption is a decision rather than a
+    # pattern somebody has to decode.
+    FOREIGN_FLAGS = {"--from"}
     every_flag = {
         option
         for sub in all_subparsers
@@ -91,7 +99,7 @@ def main() -> int:
     }
     for name, text in texts.items():
         for flag in sorted(set(re.findall(r"(?<![\w-])(--[a-z][a-z-]{2,})", text))):
-            if flag not in every_flag:
+            if flag not in every_flag and flag not in FOREIGN_FLAGS:
                 problems.append(f"{name}: documents {flag}, which no command accepts")
 
     # 3. The test count must match reality in both files.
@@ -116,6 +124,14 @@ def main() -> int:
                 problems.append(f"{name}: claims {claimed} tests, but {count} are collected")
 
     # 4. The demo numbers quoted in the READMEs must appear in real output.
+    #
+    # The child gets a *copy* of this process's environment, plus NO_COLOR. It
+    # deliberately does not get a hand-built `{"NO_COLOR": ..., "SYSTEMROOT": ...}`
+    # one: that reads as harmless isolation, but it also strips `PYTHONPATH`, which
+    # is the only thing making `agent_ledger` importable for a contributor running
+    # this from a fresh clone without installing. The failure it produced — "al demo
+    # exited 1" — said nothing about the cause.
+    env = {**os.environ, "NO_COLOR": "1"}
     demo = subprocess.run(
         [sys.executable, "-m", "agent_ledger.cli", "demo", "--no-color"],
         cwd=ROOT,
@@ -123,10 +139,13 @@ def main() -> int:
         text=True,
         encoding="utf-8",
         errors="replace",
-        env={"NO_COLOR": "1", "SYSTEMROOT": "C:\\Windows"},
+        env=env,
     )
     if demo.returncode != 0:
-        problems.append(f"al demo exited {demo.returncode}, so the transcript cannot be trusted")
+        problems.append(
+            f"al demo exited {demo.returncode}, so the transcript cannot be trusted"
+            + (f": {demo.stderr.strip().splitlines()[-1]}" if demo.stderr.strip() else "")
+        )
     else:
         for needle in ("$0.4900", "3 hops", "reputation=0.13", "No rule was written"):
             if needle in texts["README.md"] and needle not in demo.stdout:

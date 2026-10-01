@@ -4,7 +4,7 @@
 没有任何共享记录说明「哪个 agent 在谁的授权下做了什么」。这是一个账本问题 —— 所以这就是一个账本。</p>
 
 <p align="center">
-<code>pip install agent-ledger</code> &nbsp;·&nbsp; 零依赖 &nbsp;·&nbsp; 不需要 API key &nbsp;·&nbsp; Python 3.10+<br>
+<code>pip install ai-agent-ledger-py</code> &nbsp;·&nbsp; 零依赖 &nbsp;·&nbsp; 不需要 API key &nbsp;·&nbsp; Python 3.10+<br>
 <sub><a href="README.md">English</a></sub>
 </p>
 
@@ -90,7 +90,19 @@ FAILED: 1 tampered (line 3 (rcpt_1790775390758_6314f873))
 
 ## 安装
 
-**尚未发布到 PyPI。** `0.1.0` 已经打了 tag，产物也能干净构建，但还没有上传 —— 所以今天 `pip install agent-ledger` 会报 *no matching distribution*。请从源码安装：
+```bash
+pip install ai-agent-ledger-py    # 零运行时依赖，需要 Python 3.10+
+```
+
+命令行脚本是 `al` 和 `agent-ledger`，`al demo` 会完整离线跑一遍。
+不想安装任何东西的话，`uvx --from ai-agent-ledger-py al demo` 效果一样。
+
+> **先说一个命名上的小别扭。** 发行包（distribution）叫 `ai-agent-ledger-py`，因为 PyPI 上的
+> `agent-ledger` 属于另一个毫不相干的项目。其余一切没变：import 名仍是 `agent_ledger`，命令仍是
+> `al` 和 `agent-ledger`，仓库仍叫
+> [agent-ledger](https://github.com/yaoyuxiang-gnn/agent-ledger)。只有传给 `pip` 的那个字符串不同。
+
+### 从源码安装
 
 ```bash
 git clone https://github.com/yaoyuxiang-gnn/agent-ledger
@@ -104,17 +116,10 @@ al demo
 请用虚拟环境，不要装进系统解释器。`pip install -e .` 会把命令行脚本写进解释器的 `Scripts`/`bin`，而在 Windows 上，python.org 的默认安装目录属于 Administrator、普通用户不可写 —— pip 于是报出一个很费解的
 `[WinError 2] The system cannot find the file specified: ...al.exe.deleteme`。那是"找不到文件"而不是"拒绝访问"，所以读起来像构建错误。用 venv 可以完全绕开。
 
-发布之后的预期接口是：
-
-```bash
-pip install agent-ledger      # 零运行时依赖
-uvx agent-ledger demo         # 或者不安装直接跑
-```
-
 **可选扩展。** 核心包**完全没有运行时依赖**。用 Ed25519 签名 —— 唯一一种第三方能验证、却无法伪造的方案 —— 需要一个库，所以它是 extra 而不是依赖：
 
 ```bash
-pip install 'agent-ledger[sign]'   # cryptography，用于 Ed25519 回执
+pip install 'ai-agent-ledger-py[sign]'   # cryptography，用于 Ed25519 回执
 ```
 
 ## 怎么用
@@ -264,7 +269,7 @@ post_otlp(ledger_to_otlp(grid.ledger, service_name="agent-grid"), "http://localh
 <summary><b>这在实践中意味着什么 —— 以及它做不到的三件事</b></summary>
 
 - **签名说的是密钥，keyring 说的是人。** 有 pinned keyring 时，用别人的名字出示一把有效密钥会被抓住 —— 签名完全正确，旁边的**声明**不是。没有 keyring 时，什么也抓不住。这不是缺陷，这就是 keyring 存在的理由，而且 `tests/test_keyring.py` 把它写成了断言而不是注释。
-- **HMAC 无法被第三方验证。** 它是对称的，所以每个验证者同时是伪造者：它是**信任域之内**的证据，不是**组织之间**的证据。核心包仍然提供它，因为它不需要任何依赖。要第三方可验证请用 Ed25519（`pip install 'agent-ledger[sign]'`），公钥能验证而无法伪造。
+- **HMAC 无法被第三方验证。** 它是对称的，所以每个验证者同时是伪造者：它是**信任域之内**的证据，不是**组织之间**的证据。核心包仍然提供它，因为它不需要任何依赖。要第三方可验证请用 Ed25519（`pip install 'ai-agent-ledger-py[sign]'`），公钥能验证而无法伪造。
 - **尾部截断只能靠对外公布的 head 发现。** 一个被缩短的前缀本身就是一条完全自洽的链，文件内部没有任何东西能察觉。`al verify` 会打印 head；`--expect-head` 用来比对你之前公布过的那个。**公布这个动作本身就是修复。**
 - **keyring 不回答的是**这个"密钥到 principal"的映射是怎么来的。今天它是一个由人写的文件。从 SPIFFE bundle endpoint、DID document 或企业 PKI 获取它，是下一步 —— 也是这个项目应该采纳既有标准、而不是自己定义任何东西的那一处。
 

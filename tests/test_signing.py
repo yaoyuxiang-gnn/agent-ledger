@@ -579,7 +579,7 @@ class TestEd25519:
 class TestTheExtraStaysOptional:
     """`cryptography` must never become a de facto requirement.
 
-    A module-scope import would make `pip install agent-ledger` pull it
+    A module-scope import would make `pip install ai-agent-ledger-py` pull it
     in, or fail outright without it — and zero runtime dependencies is a headline
     claim, not a preference.
     """

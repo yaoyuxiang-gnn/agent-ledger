@@ -9,6 +9,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [0.2.1] — 2026-10-01
+
+**The first published release, under a different distribution name.**
+
+`agent-ledger` on PyPI is an unrelated project — an idempotency ledger for tool
+calls, owned by somebody else — and PyPI has no mechanism for two projects to
+share a name. The 0.2.0 rename therefore could not be completed as intended: the
+*project* is still agent-ledger, but the *distribution* is
+`ai-agent-ledger-py`.
+
+Nothing a user writes changed:
+
+| | Before | After |
+|---|---|---|
+| `pip install` | not possible | `ai-agent-ledger-py` |
+| Import | `agent_ledger` | `agent_ledger` |
+| CLI | `al`, `agent-ledger` | `al`, `agent-ledger` |
+| Repository | `yaoyuxiang-gnn/agent-ledger` | unchanged |
+
+The one cost is a string that does not match the repository name, which is
+recorded in the README rather than hidden, because a reader who runs
+`pip install agent-ledger` and lands on a foreign project deserves to know why
+before they file the bug.
+
+### Added — a release path that does not involve a laptop
+
+- **`.github/workflows/release.yml`**, publishing on a published GitHub release
+  through PyPI Trusted Publishing (OIDC). No API token is stored anywhere: the
+  upload authenticates with a short-lived credential minted for this workflow, in
+  this repository, in the `pypi` environment. The job refuses to publish when the
+  release tag and the version in `pyproject.toml` disagree — the one mistake that
+  cannot be undone, because a version number on PyPI can be yanked but never
+  reused.
+
+- **`tools/audit_dist.py`**, the artefact audit that CI's build job used to run
+  inline. It now asserts the two things this rename could silently break: that the
+  version in the wheel matches `pyproject.toml` *and* `_identity.py` — otherwise
+  the `User-Agent` and `--version` advertise a release that does not exist — and
+  that `al` and `agent-ledger` are still declared as console scripts. CI and the
+  release workflow call the same file, because a release that checks less than CI
+  is a release nobody checked.
+
+### Fixed
+
+- **`tools/check_readme.py` could not run from a fresh clone.** It handed the demo
+  subprocess a hand-built environment of `NO_COLOR` and `SYSTEMROOT`, which reads
+  as harmless isolation but also strips `PYTHONPATH` — the only thing making
+  `agent_ledger` importable when the package is not installed. The result was
+  `al demo exited 1`, a message that named neither the cause nor the cure. The
+  child now inherits this process's environment, and the error quotes the child's
+  last line of stderr.
+- **`uvx --from` tripped the flag check.** The README's run-it-without-installing
+  example was reported as documenting a flag `al` does not accept, because the
+  checker cannot tell another tool's flag from a fictional one of ours. The
+  exemption is now an explicit list rather than a pattern to decode.
+
 ## [0.2.0] — 2026-09-30
 
 **Renamed from `agent-delegate-grid` to `agent-ledger`.** The old name described

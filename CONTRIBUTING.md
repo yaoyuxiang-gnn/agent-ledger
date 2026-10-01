@@ -77,6 +77,25 @@ stay in English in the Chinese file on purpose: they are the API names and the
 strings a reader greps for. Translating them would make the document harder to use,
 not easier.
 
+### Releasing
+
+A release is a GitHub release, not a terminal command. Publishing runs in
+`.github/workflows/release.yml`, authenticated by PyPI Trusted Publishing — there
+is no API token on anyone's laptop and none in the repository's secrets.
+
+1. Update `version` in `pyproject.toml` **and** `VERSION` in
+   `src/agent_ledger/_identity.py`, and add a `CHANGELOG.md` entry. The release
+   job fails if the tag and `pyproject.toml` disagree, because a version number on
+   PyPI can be yanked but never reused.
+2. `python -m build && python tools/audit_dist.py && python -m twine check --strict dist/*`
+   locally. `audit_dist.py` is the same check CI runs; running it here is how you
+   find out before a release exists rather than after.
+3. Draft a GitHub release with tag `v<version>`, and publish it. The workflow
+   builds, audits, installs the wheel into a clean interpreter, then uploads.
+
+To rehearse without spending a version number, run the workflow manually
+(`workflow_dispatch`) with `target: testpypi`.
+
 ## Non-negotiables
 
 These are load-bearing promises, and CI enforces them:
